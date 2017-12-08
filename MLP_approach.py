@@ -1,10 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
-import pandas as pd
 
 #%%
-
 
 # Data
 from Preprocessor import Preprocessor
@@ -14,12 +11,13 @@ pp = Preprocessor()
 X_train = pp.preprocess_input_file('HS_D08.wav')
 y_train = pp.preprocess_output_file('HS_D08_Spk1.csv')
 
+
 #Match numpy array shapes of X_train and Y_train
 if X_train.shape[0] != y_train.shape[0]:
     y_train = y_train[0:X_train.shape[0],:]
 
-X_train = X_train[0:10,:]
-y_train = y_train[0:10,:]
+X_train = X_train[0:1000,:]
+y_train = y_train[0:1000,:]
 
 print ("X_train.shape = ", X_train.shape, "y_train.shape = ", y_train.shape)
 
@@ -29,11 +27,11 @@ def reset_graph(seed=42):
     np.random.seed(seed)
 
 #%%
-# Using plain tensor flow
 
+# Using plain tensor flow
 n_inputs = X_train.shape[1]
-n_hidden1 = 5
-n_hidden2 = 10
+n_hidden1 = 300
+n_hidden2 = 100
 n_outputs = 1
 
 reset_graph()
@@ -55,7 +53,6 @@ def neuron_layer(X, n_neurons, name, activation=None):
         else:
             return Z
 
-
 # Create the neuron layers
 with tf.name_scope("dnn"):
     hidden1 = neuron_layer(X, n_hidden1, name="hidden1",
@@ -64,39 +61,33 @@ with tf.name_scope("dnn"):
                            activation=tf.nn.relu)
     y_pred = neuron_layer(hidden2, n_outputs, name="outputs", activation=tf.nn.sigmoid)
 
-
-with tf.name_scope("loss"):
-    #xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y,
-    #                                                          logits=logits)
+with tf.name_scope("mse"):
     error = y_pred - y
-    loss = tf.reduce_mean(tf.square(error), name="loss")
+    mse = tf.reduce_mean(tf.square(error), name="mse")
+
 learning_rate = 0.01
 
 with tf.name_scope("train"):
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-    training_op = optimizer.minimize(loss)
-
-#with tf.name_scope("eval"):
-#    correct = tf.nn.in_top_k(logits, y, 1)
-#    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
+    training_op = optimizer.minimize(mse)
 
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
-n_epochs = 60000
+
+n_epochs = 6000
+batch_size = 100
+n_batches = int(np.ceil(X_train.shape[0] / batch_size))
 
 with tf.Session() as sess:
     init.run()
     for epoch in range(n_epochs):
-        #for iteration in range(X_train.shape[0] // batch_size):
-        #    X_batch, y_batch = 
-        sess.run(training_op, feed_dict={X: X_train, y: y_train})
-        #acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
-        #acc_test = accuracy.eval(feed_dict={X: mnist.test.images,
-        #                                    y: mnist.test.labels})
-        #print(epoch, "Train accuracy:", acc_train, "Test accuracy:", acc_test)
-
+        for b in range(0, X_train.shape[0], batch_size):
+            X_batch , y_batch = X_train[b:b+batch_size], y_train[b:b+batch_size]
+            sess.run(training_op, feed_dict={X: X_batch, y:y_batch})
+        if epoch % 100 == 0:
+            c = sess.run(mse, feed_dict={X: X_batch, y:y_batch})
+            print(epoch, "Train error mse:", c)
     save_path = saver.save(sess, "./my_model_final.ckpt")
 
 print("Training done...")
-
 

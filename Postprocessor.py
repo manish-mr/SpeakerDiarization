@@ -3,6 +3,8 @@ import pandas as pd
 # Class for input and output preprocessing
 class Postprocessor:
     
+    # Convert y_predicted output to csv file
+    # 'tier' represents the channel name
     def process_output(self, data, filename, tier, millis=20, threshold=5):
         result = pd.DataFrame(columns=['tmi0','tmax','text','tier'])
         

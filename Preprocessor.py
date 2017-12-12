@@ -56,22 +56,25 @@ class Preprocessor:
             
         return result
     
-    def preprocess_input_file(self, filename, millis=20):
+    def preprocess_input_file(self, filename, channel=1, millis=20):
         data, fs = sf.read(filename)
-        channel_1_data = data[:,0:1]
-        print("Total amount of data in channel 1", channel_1_data.shape[0])
+        if(channel == 1):
+            channel_data = data[:,0:1]
+        else:
+            channel_data = data[:,1:2]
+        
+        print("Total amount of data in channel "+str(channel), channel_data.shape[0])
         
         # data for 20 ms
         chunk_size = int((fs/1000)*millis)
         print("Size of each data", chunk_size)
         
-        
-        itr = int(channel_1_data.shape[0]/chunk_size)
+        itr = int(channel_data.shape[0]/chunk_size)
         print("No. of passes", itr)
         inp = list()
         for i in range(itr):
             start = i * chunk_size
-            chunked_data = channel_1_data[start:(start + chunk_size),:]
+            chunked_data = channel_data[start:(start + chunk_size),:]
             chunk_data_reshaped = np.reshape(chunked_data, chunk_size)
             #print (chunk_data_reshaped.shape)
             inp.append(chunk_data_reshaped)

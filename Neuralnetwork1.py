@@ -1,19 +1,22 @@
 import numpy as np
 import tensorflow as tf
+from matplotlib import pyplot as plt
 
 
 #%%
 
 # Data
 from Preprocessor import Preprocessor
+from Postprocessor import Postprocessor
 
 # Create an object of Preprocessor class and use its method
 pp = Preprocessor()
-X_train = pp.preprocess_input_file('HS_D08.wav')
-y_train = pp.preprocess_output_file('HS_D08_Spk1.csv')
+po = Postprocessor()
+X_train = pp.preprocess_input_file('Project Data\Sound Files\HS_D08.wav', 2)
+y_train = pp.preprocess_output_file('Project Data\CSV_Files_Final\HS_D08_Spk2.csv')
 
-X_test = pp.preprocess_input_file('HS_D21.wav')
-y_test = pp.preprocess_output_file('HS_D21_Spk1.csv')
+X_test = pp.preprocess_input_file('Project Data\Sound Files\HS_D21.wav', 2)
+y_test = pp.preprocess_output_file('Project Data\CSV_Files_Final\HS_D21_Spk2.csv')
 
 #Match numpy array shapes of X_train and Y_train
 print("before..", X_train.shape)
@@ -87,22 +90,33 @@ with tf.name_scope("train"):
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
-n_epochs = 2000
+n_epochs = 20
 batch_size = 100
 n_batches = int(np.ceil(X_train.shape[0] / batch_size))
+
+plt_x_vals =[]
+plt_y_vals = []
 
 with tf.Session() as sess:
     init.run()
     for epoch in range(n_epochs):
+        plt_x_vals.append(epoch)
         for b in range(0, X_train.shape[0], batch_size):
             X_batch , y_batch = X_train[b:b+batch_size], y_train[b:b+batch_size]
             sess.run(training_op, feed_dict={X: X_batch, y:y_batch})
-        if epoch % 20 == 0:
+        if epoch % 1 == 0:
             error_train = sess.run(mse, feed_dict={X: X_batch, y:y_batch})
             error_test = sess.run(mse, feed_dict = {X:X_test, y:y_test})
             print(epoch, "Train error: ", error_train, "Test error: ", error_test)
-
+            plt_y_vals.append(error_train)
             
     save_path = saver.save(sess, "./my_model_final.ckpt")
 
 print("Training done...")
+
+# MSE Plot
+plt.plot(plt_x_vals, plt_y_vals, linestyle='solid')
+plt.title("MSE plot")
+plt.ylabel("MSE")
+plt.xlabel("Epochs")
+plt.show()

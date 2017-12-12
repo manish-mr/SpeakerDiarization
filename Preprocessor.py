@@ -55,15 +55,14 @@ class Preprocessor:
                 start_val = start_val + (no_of_complete_chunks * millis)
             
         return result
-    def preprocess_input_file(self, filename):
+    
+    def preprocess_input_file(self, filename, millis=20):
         data, fs = sf.read(filename)
         channel_1_data = data[:,0:1]
         print("Total amount of data in channel 1", channel_1_data.shape[0])
         
-        sf.write('firstaac.wav', channel_1_data, fs)
         # data for 20 ms
-        
-        chunk_size = int((fs/1000)*20)
+        chunk_size = int((fs/1000)*millis)
         print("Size of each data", chunk_size)
         
         

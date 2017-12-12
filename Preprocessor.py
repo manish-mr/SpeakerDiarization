@@ -2,25 +2,28 @@ import numpy as np
 import pandas as pd
 import soundfile as sf
 
-
 # Class for input and output preprocessing
-
 class Preprocessor:
-   
+    
     # returns the numpy array representing Speech and Non speech value where
     # chunk size => millis (default value of millis = 20 ms)
     def preprocess_output_file(self, filename, millis = 20):
         data = pd.read_csv(filename)
         #print(data)
+        
+        # Converting seconds into millis
         data["tmi0"] = data["tmi0"] * 1000
         data["tmax"] = data["tmax"] * 1000
         #print(data)
         
         start_val = 0.0
         result = np.empty((0,1))
-
+        
         for index, row in data.iterrows():
+            
+            # row["text"]: 1 if speech and 0 if non-speech
             state = row["text"]
+            
             # complete chunks
             diff = row["tmax"] - start_val
             no_of_complete_chunks = int(diff/millis)
@@ -52,25 +55,25 @@ class Preprocessor:
                 start_val = start_val + (no_of_complete_chunks * millis)
             
         return result
-
     def preprocess_input_file(self, filename):
         data, fs = sf.read(filename)
         channel_1_data = data[:,0:1]
         print("Total amount of data in channel 1", channel_1_data.shape[0])
-        sf.write('firstaac.wav', channel_1_data, fs)
         
-	# data for 20 ms
+        sf.write('firstaac.wav', channel_1_data, fs)
+        # data for 20 ms
         
         chunk_size = int((fs/1000)*20)
         print("Size of each data", chunk_size)
         
-	itr = int(channel_1_data.shape[0]/chunk_size)
+        
+        itr = int(channel_1_data.shape[0]/chunk_size)
         print("No. of passes", itr)
-
         inp = list()
         for i in range(itr):
             start = i * chunk_size
             chunked_data = channel_1_data[start:(start + chunk_size),:]
             chunk_data_reshaped = np.reshape(chunked_data, chunk_size)
+            #print (chunk_data_reshaped.shape)
+            inp.append(chunk_data_reshaped)
         return np.array(inp)
-

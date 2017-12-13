@@ -12,16 +12,45 @@ from Postprocessor import Postprocessor
 # Create an object of Preprocessor class and use its method
 pp = Preprocessor()
 po = Postprocessor()
-X_train = pp.preprocess_input_file('Project Data\Sound Files\HS_D08.wav', 2)
-y_train = pp.preprocess_output_file('Project Data\CSV_Files_Final\HS_D08_Spk2.csv')
+
+# Files to process. Put the path of your files here in order to process
+files = [
+        "Project Data\Sound Files\HS_D08.wav"
+        ]
+
+X_train = np.empty((0,882))
+y_train = np.empty((0,1))
+
+for file_path in files:
+    
+    # Channel 1
+    X_train_ch1 = pp.preprocess_input_file(file_path, 1)
+    output_file = "Project Data\CSV_Files_Final\\" + file_path[-10:-4] + "_Spk1.csv"
+    y_train_ch1 = pp.preprocess_output_file(output_file)
+    
+    print("before..", y_train_ch1.shape)
+    if X_train_ch1.shape[0] != y_train_ch1.shape[0]:
+        y_train_ch1 = y_train_ch1[0:X_train_ch1.shape[0],:]
+    print("after..", y_train_ch1.shape)
+    
+    # Channel 2
+    X_train_ch2 = pp.preprocess_input_file(file_path, 2)
+    output_file = "Project Data\CSV_Files_Final\\" + file_path[-10:-4] + "_Spk2.csv"
+    y_train_ch2 = pp.preprocess_output_file(output_file)
+    
+    if X_train_ch2.shape[0] != y_train_ch2.shape[0]:
+        y_train_ch2 = y_train_ch2[0:X_train_ch2.shape[0],:]
+    
+    X_train = np.append(X_train, X_train_ch1, axis=0)
+    X_train = np.append(X_train, X_train_ch2, axis=0)
+    
+    y_train = np.append(y_train, y_train_ch1, axis=0)
+    y_train = np.append(y_train, y_train_ch2, axis=0)
+
 
 X_test = pp.preprocess_input_file('Project Data\Sound Files\HS_D21.wav', 2)
 y_test = pp.preprocess_output_file('Project Data\CSV_Files_Final\HS_D21_Spk2.csv')
 
-#Match numpy array shapes of X_train and Y_train
-print("before..", X_train.shape)
-if X_train.shape[0] != y_train.shape[0]:
-    y_train = y_train[0:X_train.shape[0],:]
 
 if X_test.shape[0] != y_test.shape[0]:
     y_test = y_test[0:X_test.shape[0],:]
@@ -110,7 +139,7 @@ with tf.Session() as sess:
             print(epoch, "Train error: ", error_train, "Test error: ", error_test)
             plt_y_vals.append(error_train)
             
-    save_path = saver.save(sess, "./my_model_final.ckpt")
+    save_path = saver.save(sess, "./my_model_1file_2channels.ckpt")
 
 print("Training done...")
 
